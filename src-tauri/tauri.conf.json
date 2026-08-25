@@ -1,0 +1,86 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "TALLY",
+  "version": "1.0.0",
+  "identifier": "com.trae.tally",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "TALLY · 演讲倒计时",
+        "width": 460,
+        "height": 720,
+        "minWidth": 430,
+        "minHeight": 520,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
+        "resizable": true,
+        "visible": true
+      },
+      {
+        "label": "clock",
+        "url": "clock.html",
+        "width": 420,
+        "height": 220,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
+        "alwaysOnTop": true,
+        "resizable": true,
+        "visible": false,
+        "skipTaskbar": true,
+        "focus": false
+      },
+      {
+        "label": "bar",
+        "url": "bar.html",
+        "width": 900,
+        "height": 60,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
+        "alwaysOnTop": true,
+        "resizable": false,
+        "visible": false,
+        "skipTaskbar": true,
+        "focus": false
+      },
+      {
+        "label": "runner",
+        "url": "runner.html",
+        "width": 1200,
+        "height": 800,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
+        "alwaysOnTop": true,
+        "resizable": false,
+        "visible": false,
+        "skipTaskbar": true,
+        "focus": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["dmg"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}
