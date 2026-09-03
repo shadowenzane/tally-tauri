@@ -72,4 +72,7 @@ jobs:
           path: artifacts
       - uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/*
+          # 顶层（dmg / 便携 exe）+ NSIS 安装器（嵌套在 bundle/nsis/ 下）
+          files: |
+            artifacts/*
+            artifacts/bundle/nsis/*.exe
