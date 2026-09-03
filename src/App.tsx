@@ -184,7 +184,7 @@ export default function App() {
             style={{ color: dotColor }}
           >●</span>
           <span className="brand">TALLY</span>
-          <span className="brand-sub">演讲倒计时 · 控制台</span>
+          <span className="brand-sub">演讲倒计时 · 制作人：云南化石</span>
           <div className="titlebar-actions">
             <button
               type="button"

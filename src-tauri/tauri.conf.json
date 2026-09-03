@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "TALLY · 演讲倒计时",
+        "title": "TALLY · 演讲倒计时 · 云南化石",
         "width": 460,
         "height": 720,
         "minWidth": 430,
@@ -75,6 +75,7 @@
   "bundle": {
     "active": true,
     "targets": ["dmg"],
+    "copyright": "Copyright © 2026 云南化石",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

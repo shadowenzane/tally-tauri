@@ -2,6 +2,7 @@
 name = "tally-tauri"
 version = "1.0.0"
 description = "TALLY · 演讲倒计时"
+authors = ["云南化石"]
 edition = "2021"
 
 [lib]

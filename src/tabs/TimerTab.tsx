@@ -160,7 +160,7 @@ export default function TimerTab({ prefs, update, setTotalSec }: TimerTabProps) 
         <Hint>{'支持组合键（如 Ctrl+Alt+S）或单键（如 F8）。置空并"清除"可停用对应快捷键；录制时按 Esc 取消。原快捷键保留：空格 开始/暂停、R 重置。'}</Hint>
       </Group>
 
-      <Hint>{'空格 开始/暂停 · R 重置 · 拖动标题栏移动\n数字钟窗口可直接拖动，双击关闭条不影响'}</Hint>
+      <Hint>{'空格 开始/暂停 · R 重置 · 拖动标题栏移动\n数字钟窗口可直接拖动，双击关闭条不影响\n© 2026 云南化石 · 版权所有'}</Hint>
     </div>
   );
 }

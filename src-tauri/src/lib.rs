@@ -1,3 +1,6 @@
+// TALLY · 演讲倒计时 — Tauri 版
+// 版权所有 © 2026 云南化石（制作人） · 保留所有权利
+
 use tauri::{RunEvent, WindowEvent};
 
 /// 退出整个应用（隐藏的显示窗口不阻止退出）
