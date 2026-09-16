@@ -4,7 +4,7 @@ import type { Prefs, TimerState } from '../shared/types';
 import { PRESETS, THEMES, BLINK_MODES } from '../shared/types';
 import { seqFromEvent, type HotkeyAction } from '../app/hotkeys';
 import {
-  Group, Row, SliderRow, Segmented, SwatchRow, Hint, type TabProps,
+  Group, Row, SliderRow, Segmented, SwatchRow, Hint, CheckRow, type TabProps,
 } from '../components/ui';
 
 export interface TimerTabProps extends TabProps {
@@ -142,6 +142,17 @@ export default function TimerTab({ prefs, update, setTotalSec }: TimerTabProps) 
           onChange={(v) => update((p) => { p.blink_hz = v / 10; })}
         />
         <Hint>{'呼吸：柔和淡出　硬闪：开关式明灭\n变色：与警示红交替　脉冲：缩放心跳'}</Hint>
+      </Group>
+
+      <Group title="PPT 放映联动">
+        <CheckRow
+          label="PPT 放映时自动开始倒计时"
+          checked={prefs.auto_start_on_ppt}
+          onChange={(v) => update((p) => { p.auto_start_on_ppt = v; })}
+        />
+        <Hint>
+          {'检测到 PowerPoint / WPS / Keynote 进入全屏放映时，自动开始倒计时并最小化本窗口。\nmacOS 需授予"辅助功能"权限（系统设置 → 隐私与安全性 → 辅助功能），首次检测会弹窗。\n仅在进入放映瞬间触发一次；退出放映后再次放映将重新触发。'}
+        </Hint>
       </Group>
 
       <Group title="霓虹主题">

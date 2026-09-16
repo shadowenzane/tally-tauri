@@ -22,6 +22,7 @@ export function sanitize(p: Prefs): Prefs {
   p.total = clamp(Math.round(p.total), 1, 99 * 3600 + 59 * 60 + 59);
   p.warn_sec = clamp(Math.round(p.warn_sec), 5, 120);
   p.blink_hz = clamp(p.blink_hz, 0.5, 4.0);
+  p.auto_start_on_ppt = !!p.auto_start_on_ppt;
   if (!/^#[0-9a-f]{6}$/i.test(p.theme)) p.theme = ACCENT;
   else p.theme = p.theme.toUpperCase();
   p.blink_mode = (BLINK_MODES.some(([id]) => id === p.blink_mode) ? p.blink_mode : 'color') as Prefs['blink_mode'];

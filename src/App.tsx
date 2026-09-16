@@ -10,6 +10,7 @@ import { loadKey, saveKey } from './shared/store';
 import { usePrefsState } from './app/prefsState';
 import { useTimer } from './app/timer';
 import { focusGuard, useGlobalHotkeys } from './app/hotkeys';
+import { pollPptShow } from './app/pptDetect';
 import ParticlesBg from './ParticlesBg';
 import TimerTab from './tabs/TimerTab';
 import ClockTab from './tabs/ClockTab';
@@ -44,6 +45,34 @@ export default function App() {
     reset: () => reset(),
     reset_start: () => { reset(); start(); },            // 恢复满时长后立即开始
   });
+
+  // ---- PPT 放映联动：勾选后每 2s 轮询；放映上升沿（未在计时）→ 自动开始 + 最小化 ----
+  // armed：上升沿消费一次，退出放映（下降沿）后重新武装，再次放映可再触发。
+  const pptRef = useRef({ running: false, start });
+  pptRef.current = { running: st.running, start };
+  useEffect(() => {
+    if (!prefs?.auto_start_on_ppt) return;
+    let alive = true;
+    let lastShow = false;
+    let armed = true;
+    const id = window.setInterval(() => {
+      void pollPptShow().then((inShow) => {
+        if (!alive || inShow === lastShow) return;
+        if (inShow) {
+          const wasArmed = armed;
+          armed = false;
+          if (wasArmed && !pptRef.current.running) {
+            pptRef.current.start();
+            void getCurrentWindow().minimize().catch(() => {});
+          }
+        } else {
+          armed = true;             // 退出放映 → 重新武装
+        }
+        lastShow = inShow;
+      });
+    }, 2000);
+    return () => { alive = false; window.clearInterval(id); };
+  }, [prefs?.auto_start_on_ppt]);
 
   // ---- 面板键盘：空格 开始/暂停 · R 重置（输入控件聚焦时让位） ----
   useEffect(() => {

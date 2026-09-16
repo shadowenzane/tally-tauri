@@ -55,6 +55,7 @@ export interface Prefs {
   blink_mode: BlinkMode;
   blink_hz: number;
   control_topmost: boolean;
+  auto_start_on_ppt: boolean;   // PPT 全屏放映时自动开始倒计时
   hotkeys: Record<'start' | 'pause' | 'reset' | 'reset_start', string>;
   clock: ClockPrefs;
   bar: BarPrefs;
@@ -191,6 +192,7 @@ export function defaultPrefs(): Prefs {
     blink_mode: 'color',
     blink_hz: 1.0,
     control_topmost: false,
+    auto_start_on_ppt: false,
     hotkeys: {
       start: 'Control+Alt+S',
       pause: 'Control+Alt+P',
