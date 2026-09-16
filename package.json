@@ -1,7 +1,7 @@
 {
   "name": "tally-tauri",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "云南化石",
   "type": "module",
   "scripts": {
