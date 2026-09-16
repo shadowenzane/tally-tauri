@@ -72,7 +72,7 @@ export default function RunnerView() {
     }
   };
 
-  const canvasRef = useDisplayWindow(paint);
+  const canvasRef = useDisplayWindow(paint, { maxDpr: 1.5 });
 
   // ---- 挂载：全屏定位 + 鼠标穿透 ----
   useEffect(() => {

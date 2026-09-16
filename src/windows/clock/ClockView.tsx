@@ -64,6 +64,7 @@ export default function ClockView() {
   const fadeRef = useRef(0);                    // 悬停 UI 当前淡入值（rAF 内缓动）
   const lastTRef = useRef(0);                   // 上一帧时间戳（算帧间隔）
   const layoutKeyRef = useRef('');              // 窗口尺寸变更检测 key
+  const layoutTimerRef = useRef<number | null>(null);  // 尺寸应用防抖定时器
   const topmostRef = useRef<boolean | null>(null); // 置顶变更检测
   const measureRef = useRef<HTMLCanvasElement | null>(null); // 离屏测量 canvas
   const sfRef = useRef<number | null>(null);    // 窗口缩放系数（物理→逻辑换算）
@@ -89,14 +90,19 @@ export default function ClockView() {
     else if (fadeRef.current > target) fadeRef.current = Math.max(target, fadeRef.current - step);
     const fade = fadeRef.current;
 
-    // [帧内任务 2] 窗口尺寸自适应（_relayout 移植）：key 变化时重算
+    // [帧内任务 2] 窗口尺寸自适应（_relayout 移植）：key 变化时防抖 150ms 应用
+    //（拖动字号/点径滑杆时事件密集，逐次 setSize 的 IPC 会造成卡顿）
     const layoutKey = `${cp.mode}|${cp.font_size}|${cp.dot_size}|${st.totalMs >= 3_600_000 ? 1 : 0}`;
     if (layoutKey !== layoutKeyRef.current) {
       layoutKeyRef.current = layoutKey;
       const size = clockLayoutSize(prefs, st, measureCtx());
-      try {
-        void getCurrentWindow().setSize(new LogicalSize(size.w, size.h)).catch(() => {});
-      } catch { /* 窗口销毁竞态 */ }
+      if (layoutTimerRef.current !== null) window.clearTimeout(layoutTimerRef.current);
+      layoutTimerRef.current = window.setTimeout(() => {
+        layoutTimerRef.current = null;
+        try {
+          void getCurrentWindow().setSize(new LogicalSize(size.w, size.h)).catch(() => {});
+        } catch { /* 窗口销毁竞态 */ }
+      }, 150);
     }
 
     // [帧内任务 3] 置顶开关
@@ -253,6 +259,7 @@ export default function ClockView() {
     return () => {
       disposed = true;
       if (moveTimer) clearTimeout(moveTimer);
+      if (layoutTimerRef.current !== null) window.clearTimeout(layoutTimerRef.current);
       if (unlisten) {
         try { unlisten(); } catch { /* 窗口销毁竞态 */ }
       }

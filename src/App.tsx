@@ -1,5 +1,5 @@
 // 控制面板主组件：窗口 chrome（标题栏/置顶/退出确认/几何持久化）+ 四 Tab + 传输条 + 显示窗口联动
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { LogicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
@@ -92,6 +92,20 @@ export default function App() {
     const id = window.setInterval(() => setNow(Date.now()), 100);
     return () => window.clearInterval(id);
   }, [st.running]);
+
+  // ---- 页签内容 memoize：心跳 tick（now）不触发四个 Tab 的控件重渲染 ----
+  const tabEl = useMemo(() => {
+    if (!prefs) return null;
+    return (
+      <>
+        {tab === 0 && <TimerTab prefs={prefs} update={update} st={st} setTotalSec={setTotalSec} />}
+        {tab === 1 && <ClockTab prefs={prefs} update={update} />}
+        {tab === 2 && <BarTab prefs={prefs} update={update} />}
+        {tab === 3 && <RunnerTab prefs={prefs} update={update} />}
+      </>
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, prefs, update, st, setTotalSec]);
 
   // ---- 主题：--accent / --accent-rgb CSS 变量（全 UI 联动换色） ----
   useEffect(() => {
@@ -249,10 +263,8 @@ export default function App() {
         </nav>
 
         <div className="tab-body">
-          {tab === 0 && <TimerTab prefs={prefs} update={update} st={st} setTotalSec={setTotalSec} />}
-          {tab === 1 && <ClockTab prefs={prefs} update={update} />}
-          {tab === 2 && <BarTab prefs={prefs} update={update} />}
-          {tab === 3 && <RunnerTab prefs={prefs} update={update} />}
+          {/* memoize：100ms 心跳只刷新时间文本，四个 Tab 的全部控件不随之重渲染 */}
+          {tabEl}
         </div>
 
         {/* 传输条：开始/暂停 + 重置 + 大号时间（超时红色正计时） */}

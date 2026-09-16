@@ -16,9 +16,10 @@ export default function ParticlesBg({ accent }: { accent: string }) {
     if (!ctx) return;
     let raf = 0;
     let dpr = 1;
-    // 画布尺寸随卡片变化（物理像素绘制，绘制时统一按 dpr 缩放回逻辑坐标）
+    let lastDraw = -1;
+    // 粒子为柔光点，半分辨率（dpr=1）视觉无差，Retina 下省 75% 合成像素
     const fit = () => {
-      dpr = Math.max(1, window.devicePixelRatio || 1);
+      dpr = 1;
       cvs.width = Math.max(1, Math.round(cvs.clientWidth * dpr));
       cvs.height = Math.max(1, Math.round(cvs.clientHeight * dpr));
     };
@@ -26,12 +27,17 @@ export default function ParticlesBg({ accent }: { accent: string }) {
     const ro = new ResizeObserver(fit);
     ro.observe(cvs);
     const draw = () => {
+      raf = requestAnimationFrame(draw);
+      if (document.hidden) { lastDraw = -1; return; }   // 窗口隐藏：跳过
+      const nowMs = performance.now();
+      if (lastDraw >= 0 && nowMs - lastDraw < 1000 / 30) return;  // 30fps 上限
+      lastDraw = nowMs;
       const w = cvs.width / dpr;
       const h = cvs.height / dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
       const [r, g, b] = rgbRef.current;
-      const now = performance.now() / 1000;
+      const now = nowMs / 1000;
       for (let i = 0; i < 30; i++) {
         // sin 哈希：x0 / y0 由序号决定，跨帧稳定
         const f1 = Math.sin(i * 127.1 + 311.7) * 43758.5453;
@@ -48,7 +54,6 @@ export default function ParticlesBg({ accent }: { accent: string }) {
         ctx.arc(x0 * w, h - y * h, rad, 0, Math.PI * 2);
         ctx.fill();
       }
-      raf = requestAnimationFrame(draw);
     };
     raf = requestAnimationFrame(draw);
     return () => {

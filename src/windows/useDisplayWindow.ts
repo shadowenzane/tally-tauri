@@ -9,17 +9,34 @@ import { deriveView } from '../shared/view';
 import { announceReady, onPrefs, onState } from '../shared/protocol';
 
 /**
- * 显示窗口共享渲染循环。
+ * 显示窗口共享渲染循环（性能关键路径）。
  * - 订阅 onState / onPrefs 写入 refs（不触发 React 重渲染）
  * - 挂载完成后 announceReady()，主窗口收到即回播现状（解决初始竞态）
- * - rAF 每帧：canvas 物理尺寸对齐窗口 × dpr → setTransform(dpr) → deriveView → paint(frame)
+ * - rAF 驱动，但受三层节流（macOS 透明 WKWebView 覆盖层全速重绘会导致整机卡顿）：
+ *   1) 帧率上限：运行中 fps（默认 30）、待机 idleFps（默认 15）——
+ *      动画时钟取自真实时间，降帧只影响平滑度不影响速度；
+ *   2) dpr 上限 maxDpr：覆盖层霓虹/光晕类效果对物理分辨率不敏感，
+ *      Retina 下从 2 降到 1.5 可省约 44% 合成像素；
+ *   3) document.hidden（窗口被隐藏）时整帧跳过。
  * @param paint 每帧绘制回调（内部经 ref 转发，闭包永不过期）
+ * @param opts { maxDpr=2, fps=30, idleFps=15 }
  * @returns canvas 元素 ref，交给各视图的全屏 <canvas>
  */
-export function useDisplayWindow(paint: (f: Frame) => void): RefObject<HTMLCanvasElement> {
+export interface DisplayWindowOpts {
+  maxDpr?: number;
+  fps?: number;
+  idleFps?: number;
+}
+
+export function useDisplayWindow(
+  paint: (f: Frame) => void,
+  opts: DisplayWindowOpts = {},
+): RefObject<HTMLCanvasElement> {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const paintRef = useRef(paint);
   paintRef.current = paint;                       // 每次渲染刷新回调，防止闭包过期
+  const optsRef = useRef(opts);
+  optsRef.current = opts;
 
   const prefsRef = useRef<Prefs>(defaultPrefs());
   const stRef = useRef<TimerState>({
@@ -40,11 +57,22 @@ export function useDisplayWindow(paint: (f: Frame) => void): RefObject<HTMLCanva
     announceReady();
 
     let raf = 0;
+    let ctx: CanvasRenderingContext2D | null = null;   // getContext 缓存
+    let lastPaint = -1;                                // 帧率上限用的上帧时间戳（ms）
     const loop = (): void => {
       raf = requestAnimationFrame(loop);
+      if (document.hidden) { lastPaint = -1; return; } // 窗口隐藏：整帧跳过
       const canvas = canvasRef.current;
       if (!canvas) return;
-      const dpr = window.devicePixelRatio || 1;
+      // 帧率上限：运行中 fps（默认 30）/ 待机 idleFps（默认 15）
+      const o = optsRef.current;
+      const nowMs = performance.now();
+      const st0 = stRef.current;
+      const minGap = 1000 / (st0.running ? (o.fps ?? 30) : (o.idleFps ?? 15));
+      if (lastPaint >= 0 && nowMs - lastPaint < minGap) return;
+      lastPaint = nowMs;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, o.maxDpr ?? 2);
       const w = window.innerWidth;
       const h = window.innerHeight;
       const cw = Math.max(1, Math.round(w * dpr));
@@ -54,11 +82,11 @@ export function useDisplayWindow(paint: (f: Frame) => void): RefObject<HTMLCanva
         canvas.width = cw;
         canvas.height = ch;
       }
-      const ctx = canvas.getContext('2d');
+      if (!ctx) ctx = canvas.getContext('2d');
       if (!ctx) return;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
-      const t = performance.now() / 1000;
+      const t = nowMs / 1000;
       const prefs = prefsRef.current;
       const st = stRef.current;
       const view = deriveView(st, prefs, Date.now());

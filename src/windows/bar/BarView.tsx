@@ -19,19 +19,35 @@ async function placeBar(prefs: Prefs): Promise<void> {
 }
 
 export default function BarView() {
-  // 定位 key：相同则跳过（避免每帧 await monitor）
+  // 定位 key：相同则跳过；变化时防抖 150ms 再摆窗
+  //（拖动长度/粗细等滑杆时事件密集，逐次 setPosition/setSize 的 IPC
+  //  叠加 macOS 窗口重排开销会造成严重卡顿）
   const placeKeyRef = useRef('');
+  const placeTimerRef = useRef<number | null>(null);
+  const pendingPrefsRef = useRef<Prefs | null>(null);
+  const schedulePlace = (prefs: Prefs, delay = 150): void => {
+    pendingPrefsRef.current = prefs;
+    if (placeTimerRef.current !== null) window.clearTimeout(placeTimerRef.current);
+    placeTimerRef.current = window.setTimeout(() => {
+      placeTimerRef.current = null;
+      const p = pendingPrefsRef.current;
+      if (p) void placeBar(p).catch(() => {});
+    }, delay);
+  };
+  useEffect(() => () => {
+    if (placeTimerRef.current !== null) window.clearTimeout(placeTimerRef.current);
+  }, []);
 
   // ---- 每帧绘制（Python BarWindow.paintEvent 收尾部分）----
   const paint = (f: Frame): void => {
     const { ctx, w, h, t, prefs, view } = f;
     const bp = prefs.bar;
 
-    // [帧内任务] 定位：key = (edge, length, offset, thickness) 变化时重摆
+    // [帧内任务] 定位：key = (edge, length, offset, thickness) 变化时防抖重摆
     const key = `${bp.edge}|${bp.length}|${bp.offset}|${bp.thickness}`;
     if (key !== placeKeyRef.current) {
       placeKeyRef.current = key;
-      void placeBar(prefs).catch(() => {});
+      schedulePlace(prefs);
     }
 
     // 灯条主体：环绕 / 单边
@@ -57,7 +73,7 @@ export default function BarView() {
     }
   };
 
-  const canvasRef = useDisplayWindow(paint);
+  const canvasRef = useDisplayWindow(paint, { maxDpr: 1.5 });
 
   // ---- 挂载：鼠标穿透（灯条不拦截任何点击）----
   useEffect(() => {
