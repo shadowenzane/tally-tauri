@@ -48,6 +48,9 @@ export default function App() {
 
   // ---- PPT 放映联动：勾选后每 2s 轮询；放映上升沿（未在计时）→ 自动开始 + 最小化 ----
   // armed：上升沿消费一次，退出放映（下降沿）后重新武装，再次放映可再触发。
+  // 检测已移入 Rust 原生层（NSWorkspace + CGWindowList，非候选前台时一次调用
+  // <0.1ms），此处仅调度：常驻 2s 一查即可——开销可忽略，且不再有旧方案
+  // spawn osascript 的 100-500ms/次 CPU 尖峰。
   const pptRef = useRef({ running: false, start });
   pptRef.current = { running: st.running, start };
   useEffect(() => {
@@ -55,8 +58,12 @@ export default function App() {
     let alive = true;
     let lastShow = false;
     let armed = true;
-    const id = window.setInterval(() => {
+    let inFlight = false;          // 上一次 invoke 未返回时不叠加
+    const tick = () => {
+      if (!alive || inFlight) return;
+      inFlight = true;
       void pollPptShow().then((inShow) => {
+        inFlight = false;
         if (!alive || inShow === lastShow) return;
         if (inShow) {
           const wasArmed = armed;
@@ -69,8 +76,10 @@ export default function App() {
           armed = true;             // 退出放映 → 重新武装
         }
         lastShow = inShow;
-      });
-    }, 2000);
+      }).catch(() => { inFlight = false; });
+    };
+    tick();                         // 勾选后立即查一次
+    const id = window.setInterval(tick, 2000);
     return () => { alive = false; window.clearInterval(id); };
   }, [prefs?.auto_start_on_ppt]);
 

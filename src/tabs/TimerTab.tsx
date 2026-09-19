@@ -151,7 +151,7 @@ export default function TimerTab({ prefs, update, setTotalSec }: TimerTabProps) 
           onChange={(v) => update((p) => { p.auto_start_on_ppt = v; })}
         />
         <Hint>
-          {'检测到 PowerPoint / WPS / Keynote 进入全屏放映时，自动开始倒计时并最小化本窗口。\nmacOS 需授予"辅助功能"权限（系统设置 → 隐私与安全性 → 辅助功能），首次检测会弹窗。\n仅在进入放映瞬间触发一次；退出放映后再次放映将重新触发。'}
+          {'检测到 PowerPoint / WPS / Keynote 进入全屏放映时，自动开始倒计时并最小化本窗口；倒计时窗口将悬浮于放映画面之上。\n原生接口检测（无需任何系统权限，后台开销可忽略）。仅在进入放映瞬间触发一次；退出放映后再次放映将重新触发。'}
         </Hint>
       </Group>
 
